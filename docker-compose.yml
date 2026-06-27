@@ -1,0 +1,142 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: control-total-app
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    volumes:
+      - .:/var/www/html
+    environment:
+      APP_NAME: "Control Total"
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:${APP_PORT:-8000}
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: ${DB_DATABASE:-control_total}
+      DB_USERNAME: ${DB_USERNAME:-control_total}
+      DB_PASSWORD: ${DB_PASSWORD:-secret}
+      CACHE_STORE: redis
+      QUEUE_CONNECTION: redis
+      SESSION_DRIVER: database
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      BROADCAST_CONNECTION: reverb
+      REVERB_APP_ID: control-total
+      REVERB_APP_KEY: ${REVERB_APP_KEY:-local-reverb-key}
+      REVERB_APP_SECRET: ${REVERB_APP_SECRET:-local-reverb-secret}
+      REVERB_HOST: localhost
+      REVERB_PORT: 8080
+      REVERB_SCHEME: http
+      REVERB_SERVER_HOST: 0.0.0.0
+      REVERB_SERVER_PORT: 8080
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    command: php artisan serve --host=0.0.0.0 --port=8000
+
+  horizon:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: control-total-horizon
+    restart: unless-stopped
+    volumes:
+      - .:/var/www/html
+    environment:
+      APP_ENV: local
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: ${DB_DATABASE:-control_total}
+      DB_USERNAME: ${DB_USERNAME:-control_total}
+      DB_PASSWORD: ${DB_PASSWORD:-secret}
+      CACHE_STORE: redis
+      QUEUE_CONNECTION: redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      BROADCAST_CONNECTION: reverb
+      REVERB_APP_ID: control-total
+      REVERB_APP_KEY: ${REVERB_APP_KEY:-local-reverb-key}
+      REVERB_APP_SECRET: ${REVERB_APP_SECRET:-local-reverb-secret}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      app:
+        condition: service_started
+    command: php artisan horizon
+
+  reverb:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: control-total-reverb
+    restart: unless-stopped
+    ports:
+      - "${REVERB_PORT:-8080}:8080"
+    volumes:
+      - .:/var/www/html
+    environment:
+      APP_ENV: local
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: ${DB_DATABASE:-control_total}
+      DB_USERNAME: ${DB_USERNAME:-control_total}
+      DB_PASSWORD: ${DB_PASSWORD:-secret}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      BROADCAST_CONNECTION: reverb
+      REVERB_APP_ID: control-total
+      REVERB_APP_KEY: ${REVERB_APP_KEY:-local-reverb-key}
+      REVERB_APP_SECRET: ${REVERB_APP_SECRET:-local-reverb-secret}
+      REVERB_SERVER_HOST: 0.0.0.0
+      REVERB_SERVER_PORT: 8080
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      app:
+        condition: service_started
+    command: php artisan reverb:start --host=0.0.0.0 --port=8080
+
+  mysql:
+    image: mysql:8.4
+    container_name: control-total-mysql
+    restart: unless-stopped
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-secret}
+      MYSQL_DATABASE: ${DB_DATABASE:-control_total}
+      MYSQL_USER: ${DB_USERNAME:-control_total}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD:-secret}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    container_name: control-total-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  mysql_data:
+  redis_data:
