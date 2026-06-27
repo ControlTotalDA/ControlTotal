@@ -22,6 +22,7 @@ Servicios:
 | Servicio | URL / Puerto |
 |----------|----------------|
 | API | http://localhost:8000 |
+| phpMyAdmin | http://localhost:8081 |
 | WebSockets (Reverb) | ws://localhost:8080 |
 | MySQL | localhost:3306 |
 | Redis | localhost:6379 |

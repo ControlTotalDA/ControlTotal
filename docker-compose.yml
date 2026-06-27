@@ -137,6 +137,23 @@ services:
     volumes:
       - redis_data:/data
 
+  phpmyadmin:
+    image: phpmyadmin:5
+    container_name: control-total-phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "${PMA_PORT:-8081}:80"
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: ${DB_USERNAME:-control_total}
+      PMA_PASSWORD: ${DB_PASSWORD:-secret}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-secret}
+      UPLOAD_LIMIT: 64M
+    depends_on:
+      mysql:
+        condition: service_healthy
+
 volumes:
   mysql_data:
   redis_data:
