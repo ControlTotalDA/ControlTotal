@@ -7,7 +7,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libzip-dev \
     libicu-dev \
     libonig-dev \
-    libpq-dev \
     && docker-php-ext-install \
         pdo_mysql \
         bcmath \
