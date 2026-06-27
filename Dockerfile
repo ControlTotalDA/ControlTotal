@@ -8,6 +8,7 @@ RUN apk add --no-cache \
     libzip-dev \
     icu-dev \
     oniguruma-dev \
+    postgresql-dev \
     linux-headers \
     $PHPIZE_DEPS \
     && docker-php-ext-install \
@@ -21,7 +22,8 @@ RUN apk add --no-cache \
         zip \
     && pecl install redis swoole \
     && docker-php-ext-enable redis swoole \
-    && apk del $PHPIZE_DEPS linux-headers
+    && apk del $PHPIZE_DEPS linux-headers postgresql-dev \
+    && apk add --no-cache postgresql-libs
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
