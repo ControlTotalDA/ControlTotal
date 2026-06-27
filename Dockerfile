@@ -32,6 +32,8 @@ WORKDIR /var/www/html
 
 FROM base AS vendor
 
+ENV COMPOSER_ALLOW_SUPERUSER=1
+
 COPY composer.json composer.lock ./
 RUN composer install \
     --no-dev \
@@ -42,15 +44,17 @@ RUN composer install \
 
 FROM base AS runtime
 
+ENV COMPOSER_ALLOW_SUPERUSER=1
+
 COPY --from=vendor /var/www/html/vendor ./vendor
 COPY . .
 
-RUN composer dump-autoload --optimize \
-    && chown -R www-data:www-data storage bootstrap/cache \
+COPY docker/railway-start.sh /usr/local/bin/railway-start.sh
+RUN chmod +x /usr/local/bin/railway-start.sh \
+    && composer dump-autoload --optimize \
+    && mkdir -p storage/framework/{cache,sessions,views} storage/logs bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
-
-USER www-data
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "php artisan octane:start --server=swoole --host=0.0.0.0 --port=${PORT:-8000}"]
+CMD ["/usr/local/bin/railway-start.sh"]

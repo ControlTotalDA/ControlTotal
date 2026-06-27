@@ -60,7 +60,32 @@ Base URL: `/api/v1`
 
 ## Producción (Railway)
 
-El `Dockerfile` en la raíz está optimizado para Railway con PHP 8.3 + Octane (Swoole). Ver `railway.json` y `.env.example`.
+El build de Docker **sí funcionó** — lo que falló fue el **healthcheck**: la app no respondió en `/up` porque no pudo arrancar (normalmente falta MySQL o `APP_KEY`).
+
+### Pasos en Railway
+
+1. **Crear servicio MySQL** en el mismo proyecto y vincularlo al servicio de la API.
+2. **Variables de entorno** obligatorias:
+
+| Variable | Valor |
+|----------|--------|
+| `APP_KEY` | Generar con `php artisan key:generate --show` |
+| `APP_ENV` | `production` |
+| `APP_DEBUG` | `false` |
+| `APP_URL` | URL pública de Railway |
+| `DB_CONNECTION` | `mysql` |
+| `DB_HOST` | `${{MySQL.MYSQLHOST}}` |
+| `DB_PORT` | `${{MySQL.MYSQLPORT}}` |
+| `DB_DATABASE` | `${{MySQL.MYSQLDATABASE}}` |
+| `DB_USERNAME` | `${{MySQL.MYSQLUSER}}` |
+| `DB_PASSWORD` | `${{MySQL.MYSQLPASSWORD}}` |
+| `CACHE_STORE` | `database` |
+| `QUEUE_CONNECTION` | `database` |
+| `SESSION_DRIVER` | `database` |
+
+3. Redeploy. El script `docker/railway-start.sh` espera MySQL, migra y arranca Octane.
+
+Ver `Dockerfile` y `railway.json`.
 
 ## Stack
 
