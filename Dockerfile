@@ -1,14 +1,16 @@
-FROM php:8.4-cli-alpine AS base
+FROM php:8.4-cli-bookworm AS base
 
-RUN apk add --no-cache \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
-    zip \
     unzip \
     libzip-dev \
-    icu-dev \
-    oniguruma-dev \
-    linux-headers \
+    libicu-dev \
+    libonig-dev \
+    libssl-dev \
+    libcurl4-openssl-dev \
+    libbrotli-dev \
+    pkg-config \
     $PHPIZE_DEPS \
     && docker-php-ext-install \
         pdo_mysql \
@@ -20,7 +22,9 @@ RUN apk add --no-cache \
         zip \
     && pecl install redis swoole \
     && docker-php-ext-enable redis swoole \
-    && apk del $PHPIZE_DEPS linux-headers
+    && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
+        $PHPIZE_DEPS \
+    && rm -rf /var/lib/apt/lists/* /tmp/pear
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
@@ -49,4 +53,4 @@ USER www-data
 
 EXPOSE 8000
 
-CMD ["php", "artisan", "octane:start", "--server=swoole", "--host=0.0.0.0", "--port=8000"]
+CMD ["sh", "-c", "php artisan octane:start --server=swoole --host=0.0.0.0 --port=${PORT:-8000}"]
